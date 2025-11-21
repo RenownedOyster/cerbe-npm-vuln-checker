@@ -2,7 +2,7 @@
   "name": "cerbe-npm-vuln-checker",
   "displayName": "Cerbe: NPM Vulnerability Checker",
   "description": "Scans for vulnerable npm dependencies using OSV.dev (direct + transitive, lockfile-aware).",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "RenownedOyster",
   "license": "MIT",
   "engines": {
