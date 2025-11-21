@@ -3,7 +3,7 @@
   "displayName": "Cerbe: NPM Vulnerability Checker",
   "description": "Scans for vulnerable npm dependencies using OSV.dev (direct + transitive, lockfile-aware).",
   "version": "0.1.2",
-  "publisher": "your-publisher-id",
+  "publisher": "RenownedOyster",
   "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
