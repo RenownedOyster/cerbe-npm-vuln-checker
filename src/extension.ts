@@ -56,7 +56,7 @@ interface CheckItem {
 
 export function activate(context: vscode.ExtensionContext) {
   const diagnosticCollection =
-    vscode.languages.createDiagnosticCollection('npm-vuln-checker');
+    vscode.languages.createDiagnosticCollection('cerbe-npm-vuln-checker');
   context.subscriptions.push(diagnosticCollection);
 
   // Status bar item
@@ -67,13 +67,13 @@ export function activate(context: vscode.ExtensionContext) {
   statusBarItem.text = '$(shield) NPM Vuln: Ready';
   statusBarItem.tooltip =
     'Scan package.json for known vulnerabilities with OSV.dev';
-  statusBarItem.command = 'npmVulnChecker.scanDependencies';
+  statusBarItem.command = 'cerbe.scanDependencies';
   statusBarItem.show();
   context.subscriptions.push(statusBarItem);
 
   // Command (still available manually)
   const scanCommand = vscode.commands.registerCommand(
-    'npmVulnChecker.scanDependencies',
+    'cerbe.scanDependencies',
     async () => {
       await scanWorkspaceForVulns(diagnosticCollection);
     }

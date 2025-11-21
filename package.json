@@ -1,6 +1,6 @@
 {
-  "name": "npm-vuln-checker",
-  "displayName": "NPM Vulnerability Checker",
+  "name": "cerbe-npm-vuln-checker",
+  "displayName": "Cerbe: NPM Vulnerability Checker",
   "description": "Scans for vulnerable npm dependencies using OSV.dev (direct + transitive, lockfile-aware).",
   "version": "0.0.1",
   "publisher": "your-publisher-id",
@@ -10,11 +10,11 @@
   "categories": ["Other", "Programming Languages"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/RenownedOyster/npm-vuln-checker"
+    "url": "https://github.com/RenownedOyster/cerbe-npm-vuln-checker"
   },
   "icon": "icon.png",
   "activationEvents": [
-    "onCommand:npmVulnChecker.scanDependencies",
+    "onCommand:cerbe.scanDependencies",
     "workspaceContains:package.json",
     "onStartupFinished"
   ],
@@ -22,8 +22,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "npmVulnChecker.scanDependencies",
-        "title": "NPM Vulnerability checker: Scan package.json"
+        "command": "cerbe.scanDependencies",
+        "title": "Cerbe NPM Vulnerability checker: Scan package.json"
       }
     ]
   },
