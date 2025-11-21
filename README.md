@@ -39,12 +39,12 @@ Most of the time you don’t need to do anything: the extension scans automatica
 
 1. Open a folder that contains a `package.json` in the root.
 2. The extension will scan automatically and:
-   - Show status in the status bar (`NPM Vuln: …`).
+   - Show status in the status bar (`Cerbe:…`).
    - Populate diagnostics in `package.json` and the Problems panel.
 3. To manually trigger a scan:
    - Open the Command Palette (Ctrl+Shift+P / Cmd+Shift+P).
-   - Run: **NPM Vulnerability Checker: Scan package.json**.
-   - Or click the status bar item **“NPM Vuln: …”**.
+   - Run: **Cerbe NPM Vulnerability checker: Scan package.json**.
+   - Or click the status bar item **“Cerbe:…”**.
 
 Then:
 
