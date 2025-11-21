@@ -4,6 +4,7 @@
   "description": "Scans for vulnerable npm dependencies using OSV.dev (direct + transitive, lockfile-aware).",
   "version": "0.1.1",
   "publisher": "your-publisher-id",
+  "license": "MIT",
   "engines": {
     "vscode": "^1.85.0"
   },
