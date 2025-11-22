@@ -21,6 +21,14 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "cerbeVulnerabilities",
+          "name": "Cerbe Vulnerabilities"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "cerbe.scanDependencies",

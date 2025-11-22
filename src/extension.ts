@@ -58,6 +58,160 @@ interface CheckItem {
   uri: vscode.Uri;
 }
 
+// Used for TreeView
+interface ScanResultEntry extends CheckItem {
+  vulns: OsvVulnerability[];
+}
+
+type CerbeTreeNode =
+  | {
+      kind: 'file';
+      uri: vscode.Uri;
+      issueCount: number;
+    }
+  | {
+      kind: 'package';
+      uri: vscode.Uri;
+      packageName: string;
+      version: string;
+      isDirect: boolean;
+      vulns: OsvVulnerability[];
+      range: vscode.Range;
+    };
+
+let treeDataProvider: CerbeTreeProvider | undefined;
+let lastScanResults: ScanResultEntry[] = [];
+
+// ---- TreeView provider ----
+
+class CerbeTreeProvider
+  implements vscode.TreeDataProvider<CerbeTreeNode>
+{
+  private _onDidChangeTreeData = new vscode.EventEmitter<
+    CerbeTreeNode | undefined | null | void
+  >();
+  readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
+  private results: ScanResultEntry[] = [];
+
+  setResults = (results: ScanResultEntry[]) => {
+    this.results = results;
+    this.refresh();
+  };
+
+  refresh = () => {
+    this._onDidChangeTreeData.fire();
+  };
+
+  getTreeItem = (element: CerbeTreeNode): vscode.TreeItem => {
+    if (element.kind === 'file') {
+      const label = `${vscode.workspace.asRelativePath(
+        element.uri
+      )} (${element.issueCount})`;
+      const item = new vscode.TreeItem(
+        label,
+        vscode.TreeItemCollapsibleState.Collapsed
+      );
+      item.tooltip = `${element.issueCount} vulnerable package${
+        element.issueCount === 1 ? '' : 's'
+      }`;
+      return item;
+    }
+
+    const issueCount = element.vulns.length;
+    const directText = element.isDirect ? 'direct' : 'transitive';
+    const label = `${element.packageName}@${element.version}`;
+    const description = `${issueCount} vuln${
+      issueCount === 1 ? '' : 's'
+    } • ${directText}`;
+
+    const item = new vscode.TreeItem(
+      label,
+      vscode.TreeItemCollapsibleState.None
+    );
+    item.description = description;
+
+    const tooltipLines = [
+      `${label}`,
+      element.isDirect ? 'Direct dependency' : 'Transitive dependency',
+      '',
+      ...element.vulns
+        .slice(0, 3)
+        .map((v) => `${v.id ?? 'Unknown'}: ${v.summary ?? ''}`)
+    ];
+    item.tooltip = tooltipLines.join('\n');
+
+    item.command = {
+      command: 'vscode.open',
+      title: 'Open package.json',
+      arguments: [
+        element.uri,
+        {
+          selection: new vscode.Range(
+            element.range.start,
+            element.range.end
+          )
+        }
+      ]
+    };
+
+    return item;
+  };
+
+  getChildren = async (
+    element?: CerbeTreeNode
+  ): Promise<CerbeTreeNode[]> => {
+    if (!this.results.length) {
+      return [];
+    }
+
+    if (!element) {
+      // Root level: one node per package.json with issues
+      const byFile = new Map<string, { uri: vscode.Uri; count: number }>();
+
+      this.results.forEach((entry) => {
+        const key = entry.uri.toString();
+        const existing = byFile.get(key);
+        if (existing) {
+          byFile.set(key, {
+            uri: existing.uri,
+            count: existing.count + 1
+          });
+        } else {
+          byFile.set(key, { uri: entry.uri, count: 1 });
+        }
+      });
+
+      return Array.from(byFile.values()).map((v) => ({
+        kind: 'file' as const,
+        uri: v.uri,
+        issueCount: v.count
+      }));
+    }
+
+    if (element.kind === 'file') {
+      // Child level: vulnerable packages under this package.json
+      const fileResults = this.results.filter(
+        (r) => r.uri.toString() === element.uri.toString()
+      );
+
+      return fileResults.map((r) => ({
+        kind: 'package' as const,
+        uri: r.uri,
+        packageName: r.name,
+        version: r.version,
+        isDirect: r.isDirect,
+        vulns: r.vulns,
+        range: r.range
+      }));
+    }
+
+    return [];
+  };
+}
+
+// ---- Activate / deactivate ----
+
 export const activate = (context: vscode.ExtensionContext) => {
   const diagnosticCollection =
     vscode.languages.createDiagnosticCollection(DIAGNOSTIC_COLLECTION_ID);
@@ -84,6 +238,14 @@ export const activate = (context: vscode.ExtensionContext) => {
   );
   context.subscriptions.push(scanCommand);
 
+  // TreeView
+  const provider = new CerbeTreeProvider();
+  treeDataProvider = provider;
+  const treeView = vscode.window.createTreeView('cerbeVulnerabilities', {
+    treeDataProvider: provider
+  });
+  context.subscriptions.push(treeView);
+
   if (vscode.workspace.workspaceFolders?.length) {
     triggerScan();
   }
@@ -96,6 +258,8 @@ export const activate = (context: vscode.ExtensionContext) => {
 
   pkgWatcher.onDidDelete(() => {
     diagnosticCollection.clear();
+    lastScanResults = [];
+    treeDataProvider?.setResults([]);
     updateStatusBar(
       '$(shield) Cerbe No package.json',
       'No package.json found in this workspace'
@@ -146,6 +310,8 @@ const scanWorkspaceForVulns = async (
   diagnostics: vscode.DiagnosticCollection
 ) => {
   diagnostics.clear();
+  lastScanResults = [];
+  treeDataProvider?.setResults([]);
 
   updateStatusBar(
     '$(sync~spin) Cerbe Scanning...',
@@ -288,6 +454,8 @@ const scanWorkspaceForVulns = async (
       Promise.resolve()
     );
 
+    const scanResults: ScanResultEntry[] = [];
+
     const diagnosticsByFile = checkItems.reduce<
       Map<string, vscode.Diagnostic[]>
     >((acc, item) => {
@@ -334,12 +502,21 @@ const scanWorkspaceForVulns = async (
       const fileKey = item.uri.toString();
       const list = acc.get(fileKey) ?? [];
       acc.set(fileKey, [...list, diagnostic]);
+
+      scanResults.push({
+        ...item,
+        vulns
+      });
+
       return acc;
     }, new Map());
 
     Array.from(diagnosticsByFile.entries()).forEach(([uriStr, diags]) => {
       diagnostics.set(vscode.Uri.parse(uriStr), diags);
     });
+
+    lastScanResults = scanResults;
+    treeDataProvider?.setResults(lastScanResults);
 
     const allDiagnostics = Array.from(diagnosticsByFile.values()).flat();
     const transitiveIssueCount = allDiagnostics.filter((d) =>
@@ -739,7 +916,9 @@ const safeParsePackageJson = (
     return JSON.parse(doc.getText()) as PackageJson;
   } catch (err: any) {
     vscode.window.showWarningMessage(
-      `Cerbe: Skipping invalid package.json at ${doc.uri.fsPath}: ${err?.message ?? String(err)}`
+      `Cerbe: Skipping invalid package.json at ${doc.uri.fsPath}: ${
+        err?.message ?? String(err)
+      }`
     );
     return undefined;
   }
