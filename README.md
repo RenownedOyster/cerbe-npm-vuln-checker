@@ -2,8 +2,8 @@
 
 # Cerbe — NPM Vulnerability Checker
 
-![Version](https://img.shields.io/visual-studio-marketplace/v/RenownedOyster.cerbe)
-![Installs](https://img.shields.io/visual-studio-marketplace/i/RenownedOyster.cerbe)
+![Version](https://img.shields.io/visual-studio-marketplace/v/RenownedOyster.cerbe-npm-vuln-checker)
+![Installs](https://img.shields.io/visual-studio-marketplace/i/RenownedOyster.cerbe-npm-vuln-checker)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 Cerbe is a VS Code extension that scans your workspace dependencies — direct and transitive — using the [OSV.dev](https://osv.dev) security database. Vulnerable packages are highlighted directly inside your `package.json` files and surfaced in a dedicated sidebar view, giving you instant visibility into supply-chain risk.
