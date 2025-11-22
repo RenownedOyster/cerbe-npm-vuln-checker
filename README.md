@@ -171,8 +171,6 @@ To the OSV.dev API:
 
 No source code, file contents, or file paths are sent. The extension does not transmit any project metadata beyond the package name and version being checked.
 
-No tele
-
 ---
 
 ## 📝 License
